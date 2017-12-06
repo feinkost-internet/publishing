@@ -30,10 +30,8 @@ fi
 slug="fki${episode_number}"
 dir="data/$slug"
 
-
-
 file_mixed="${dir}/${slug}-mixed.wav"
-file_trimed="${dir}/${slug}-trimed.wav"
+file_trimmed="${dir}/${slug}-trimmed.wav"
 file_final="${dir}/${slug}.mp3"
 
 tracks_dir="${dir}/tracks"
@@ -50,7 +48,7 @@ soxCmd() {
 trim() {
   fileIn="$1"
   fileOut="$2"
-  
+
   open "$fileIn"
 
   printf "Start: "
@@ -60,9 +58,9 @@ trim() {
   read length
 
   sox "${fileIn}" "${fileOut}" trim "$start" "$length"
-  
+
   open "$fileOut"
-  
+
   printf "Done? [y|n]: "
   read isDone
 
@@ -78,9 +76,10 @@ mkdir -p "${tmp_dir}"
 
 for track_file_name in ${tracks[@]}; do
   track=${track_file_name%%.mp3}
-  
+
   echo "${track}"
-  
+  echo ""
+
   track_file="${tracks_dir}/${track_file_name}"
   track_out_file="${tmp_dir}/${track}.wav"
   noise_file="${tmp_dir}/${track}-noise.wav"
@@ -89,14 +88,14 @@ for track_file_name in ${tracks[@]}; do
   soxCmd "${track_file}" "${noise_file}" trim 0 3
   soxCmd "${noise_file}" -n noiseprof "${prof_file}"
   soxCmd --norm "${track_file}" "${track_out_file}" noisered "${prof_file}" 0.21
-  
+
   rm "$noise_file"
   rm "$prof_file"
 done
 
 soxCmd --combine mix "$(find "${tmp_dir}" -maxdepth 1 -print | grep '\.wav$')" "${file_mixed}"
 
-trim "${file_mixed}" "${file_trimed}"
+trim "${file_mixed}" "${file_trimmed}"
 
 printf "Title: FKI$episode_number - "
 read episode_title
@@ -117,6 +116,8 @@ lame \
   --tl "$SHOW_AUTHOR" \
   --ty `date '+%Y'` \
   --ti "$ARTWORK_JPG_FILENAME" \
-  --add-id3v2 "${file_trimed}" "${file_final}"
+  --add-id3v2 "${file_trimmed}" "${file_final}"
 
-mkdir -p "${tmp_dir}/"
+rm -"${file_mixed}/"
+rm -"${file_trimmed}/"
+rm -rf "${tmp_dir}/"
